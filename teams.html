@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams - NBA 2K Pro Am Global Rankings</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2" type="module"></script>
+    <script src="/js/config.js" type="module"></script>
+    <script src="/js/main.js" type="module"></script>
+    <style>
+        .team-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .team-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">NBA 2K Pro Am Global Rankings</h1>
+            <nav class="relative">
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                
+                <!-- Desktop Menu -->
+                <ul id="main-menu" class="hidden md:flex space-x-4 md:space-x-6">
+                    <li><a href="index.html#leaderboard" class="nav-link hover:underline" data-active="leaderboard">Leaderboard</a></li>
+                    <li><a href="ranking-info.html" class="nav-link hover:underline" data-active="ranking-info">Ranking Info</a></li>
+                    <li><a href="player-rating-info.html" class="nav-link hover:underline" data-active="player-rating-info">Player Rating Info</a></li>
+                    <li><a href="players.html" class="nav-link hover:underline" data-active="players">Players List</a></li>
+                    <li><a href="teams.html" class="nav-link font-semibold text-blue-100" data-active="teams">Teams List</a></li>
+                    <li><a href="events.html" class="nav-link hover:underline" data-active="events">Events List</a></li>
+                    <li><a href="submit-results.html" class="bg-white text-blue-600 px-3 py-1 md:px-4 md:py-2 rounded-md hover:bg-blue-50 text-sm md:text-base font-medium">Submit Results</a></li>
+                </ul>
+                
+                <!-- Mobile Menu (hidden by default) -->
+                <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="index.html#leaderboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Leaderboard</a>
+                    <a href="ranking-info.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ranking Info</a>
+                    <a href="player-rating-info.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Player Rating Info</a>
+                    <a href="players.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Players List</a>
+                    <a href="teams.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 bg-gray-100 font-medium">Teams List</a>
+                    <a href="events.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Events</a>
+                    <a href="submit-results.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Submit Results</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Teams</h1>
+            <div class="w-full md:w-1/3">
+                <div class="relative">
+                    <input type="text" id="team-search" placeholder="Search teams..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
+            <div class="flex flex-wrap gap-4">
+                <div class="w-full md:w-auto">
+                    <label for="region-filter" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                    <select id="region-filter" class="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Regions</option>
+                        <!-- Regions will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="w-full md:w-auto">
+                    <label for="sort-by" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                    <select id="sort-by" class="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="rp-desc">RP (High to Low)</option>
+                        <option value="rp-asc">RP (Low to High)</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-teams" class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+
+        <!-- Teams Grid -->
+        <div id="teams-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Teams will be populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-teams" class="hidden text-center py-12">
+            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h3 class="mt-2 text-lg font-medium text-gray-900">No teams found</h3>
+            <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="teams-error" class="hidden text-center py-12">
+            <div class="inline-flex items-center px-4 py-2 rounded-md bg-red-100 text-red-800">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Failed to load teams. Please try again later.</span>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-6 mt-12">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-lg font-semibold">NBA 2K Pro Am Global Rankings</h3>
+                    <p class="text-gray-400 text-sm">The definitive ranking system for 2K basketball esports</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-300 hover:text-white">Terms</a>
+                    <a href="#" class="text-gray-300 hover:text-white">Privacy</a>
+                    <a href="#" class="text-gray-300 hover:text-white">Contact</a>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-700 text-center md:text-left">
+                <p class="text-gray-400 text-sm"> 2025 NBA 2K Pro Am Global Rankings. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script type="module" src="./js/teams.js"></script>
+
+</body>
+</html>

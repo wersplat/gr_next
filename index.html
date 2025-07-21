@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA 2K Pro Am Global Rankings</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/js/config.js" type="module"></script>
+    <script src="/js/main.js" type="module"></script>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">NBA 2K Pro Am Global Rankings</h1>
+            <nav class="relative">
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                
+                <!-- Desktop Menu -->
+                <ul id="main-menu" class="hidden md:flex space-x-4 md:space-x-6">
+                    <li><a href="index.html#leaderboard" class="nav-link hover:underline font-medium" data-active="leaderboard">Leaderboard</a></li>
+                    <li><a href="ranking-info.html" class="nav-link hover:underline" data-active="ranking-info">Ranking Info</a></li>
+                    <li><a href="player-rating-info.html" class="nav-link hover:underline" data-active="player-rating-info">Player Rating Info</a></li>
+                    <li><a href="players.html" class="nav-link hover:underline" data-active="players">Players List</a></li>
+                    <li><a href="teams.html" class="nav-link hover:underline" data-active="teams">Teams List</a></li>
+                    <li><a href="events.html" class="nav-link hover:underline" data-active="events">Events List</a></li>
+                    <li><a href="submit-results.html" class="bg-white text-blue-600 px-3 py-1 md:px-4 md:py-2 rounded-md hover:bg-blue-50 text-sm md:text-base font-medium">Submit Results</a></li>
+                </ul>
+                
+                <!-- Mobile Menu (hidden by default) -->
+                <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="index.html#leaderboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Leaderboard</a>
+                    <a href="ranking-info.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ranking Info</a>
+                    <a href="player-rating-info.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Player Rating Info</a>
+                    <a href="players.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Players List</a>
+                    <a href="teams.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Teams List</a>
+                    <a href="events.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Events</a>
+                    <a href="submit-results.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Submit Results</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4">
+        <section id="leaderboard" class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Global Leaderboard</h2>
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RP</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ELO</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tier</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Loading leaderboard...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="player-leaderboard" class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Top Players</h2>
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RP</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary Tier</th>
+                        </tr>
+                    </thead>
+                    <tbody id="player-leaderboard-body" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Loading players...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="recent-events" class="mb-12">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Recent Events</h2>
+                <a href="events.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                    View All Events
+                    <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </a>
+            </div>
+            <div id="events-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Loading state -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="animate-pulse space-y-4">
+                        <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                        <div class="pt-4">
+                            <div class="h-8 bg-gray-200 rounded w-32"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block bg-white p-6 rounded-lg shadow-md">
+                    <div class="animate-pulse space-y-4">
+                        <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                        <div class="pt-4">
+                            <div class="h-8 bg-gray-200 rounded w-32"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden lg:block bg-white p-6 rounded-lg shadow-md">
+                    <div class="animate-pulse space-y-4">
+                        <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                        <div class="pt-4">
+                            <div class="h-8 bg-gray-200 rounded w-32"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error state (hidden by default) -->
+            <div id="events-error" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700" id="events-error-message">
+                            Error loading events. Please try again later.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Empty state (hidden by default) -->
+            <div id="events-empty" class="hidden text-center py-8">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No events found</h3>
+                <p class="mt-1 text-sm text-gray-500">There are no upcoming events scheduled at this time.</p>
+                <div class="mt-6">
+                    <button type="button" id="refresh-events" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-6 mt-12">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold mb-2">2K26 Global Ranking</h3>
+                    <p class="text-gray-400">Tracking competitive team performance across all leagues</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-white font-medium">Leaderboard</a>
+                    <a href="ranking-info.html" class="text-gray-300 hover:text-white">Ranking Info</a>
+                    <a href="#" class="text-gray-300 hover:text-white">FAQ</a>
+                    <a href="#" class="text-gray-300 hover:text-white">Terms</a>
+                </div>
+            </div>
+            <div class="mt-6 pt-6 border-t border-gray-700 text-center md:text-left">
+                <p class="text-gray-400 text-sm"> 2025 NBA 2K Pro Am Global Rankings. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!mobileMenu.contains(e.target) && e.target !== mobileMenuButton) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Highlight active page in navigation
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                const linkHref = link.getAttribute('href');
+                const linkPage = linkHref.split('/').pop().split('#')[0] || 'index.html';
+                
+                if (linkPage === currentPage) {
+                    link.classList.add('text-blue-200', 'font-semibold');
+                    link.classList.remove('hover:underline');
+                }
+                
+                // Special case for index.html with hash
+                if (currentPage === 'index.html' && linkHref.includes('#leaderboard')) {
+                    link.classList.add('text-blue-200', 'font-semibold');
+                    link.classList.remove('hover:underline');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

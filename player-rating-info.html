@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Rating Info - NBA 2K Pro Am Global Rankings</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/js/config.js" type="module"></script>
+    <script src="/js/main.js" type="module"></script>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">NBA 2K Pro Am Global Rankings</h1>
+            <nav class="relative">
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                
+                <!-- Desktop Menu -->
+                <ul id="main-menu" class="hidden md:flex space-x-4 md:space-x-6">
+                    <li><a href="index.html#leaderboard" class="nav-link hover:underline" data-active="leaderboard">Leaderboard</a></li>
+                    <li><a href="ranking-info.html" class="nav-link hover:underline" data-active="ranking-info">Ranking Info</a></li>
+                    <li><a href="player-rating-info.html" class="nav-link hover:underline font-medium" data-active="player-rating-info">Player Rating Info</a></li>
+                    <li><a href="players.html" class="nav-link hover:underline" data-active="players">Players List</a></li>
+                    <li><a href="teams.html" class="nav-link hover:underline" data-active="teams">Teams List</a></li>
+                    <li><a href="events.html" class="nav-link hover:underline" data-active="events">Events List</a></li>
+                    <li><a href="submit-results.html" class="bg-white text-blue-600 px-3 py-1 md:px-4 md:py-2 rounded-md hover:bg-blue-50 text-sm md:text-base font-medium">Submit Results</a></li>
+                </ul>
+                
+                <!-- Mobile Menu (hidden by default) -->
+                <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="index.html#leaderboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Leaderboard</a>
+                    <a href="ranking-info.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ranking Info</a>
+                    <a href="player-rating-info.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 bg-gray-100 font-medium">Player Rating Info</a>
+                    <a href="players.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Players List</a>
+                    <a href="teams.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Teams List</a>
+                    <a href="events.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Events List</a>
+                    <a href="submit-results.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Submit Results</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 max-w-4xl">
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">1. Global Rating Formula</h2>
+            <p class="text-gray-700 mb-4">Each player receives a <strong>Global Rating</strong> (0–100+) derived from verified game stats and context.</p>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                <code class="text-sm font-mono">Global Rating = Base + (Game Impact × Weight) + Event Bonus − Decay</code>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Factor</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">Game Impact</td>
+                            <td class="px-6 py-4">Weighted stat model (PPG, APG, SPG, TO, etc.)</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">Event Bonus</td>
+                            <td class="px-6 py-4">Multiplier for Majors, Finals, LANs</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">Decay</td>
+                            <td class="px-6 py-4">-2% monthly if inactive (prevents ghost ratings)</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">Caps</td>
+                            <td class="px-6 py-4">Rating inflation controlled with season soft caps</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">2. Global Tier Classification</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tier</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating Range</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emoji</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Tier S</td>
+                            <td class="px-6 py-4">Hall of Fame</td>
+                            <td class="px-6 py-4">100+</td>
+                            <td class="px-6 py-4 text-xl">🐐</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Tier A</td>
+                            <td class="px-6 py-4">Elite</td>
+                            <td class="px-6 py-4">90–99</td>
+                            <td class="px-6 py-4 text-xl">🥇</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Tier B</td>
+                            <td class="px-6 py-4">Pro</td>
+                            <td class="px-6 py-4">80–89</td>
+                            <td class="px-6 py-4 text-xl">🥈</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Tier C</td>
+                            <td class="px-6 py-4">Rising Star</td>
+                            <td class="px-6 py-4">70–79</td>
+                            <td class="px-6 py-4 text-xl">🥉</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Tier D</td>
+                            <td class="px-6 py-4">Unranked</td>
+                            <td class="px-6 py-4">&lt;70</td>
+                            <td class="px-6 py-4 text-xl">🛠️</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-gray-600 mt-4 text-sm">Displayed visually in leaderboards and roster management tools.</p>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">3. Salary Calculation Formula</h2>
+            <p class="text-gray-700 mb-4">Used in Franchise Leagues to assign player costs.</p>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                <code class="text-sm font-mono">Raw Salary = (PPG × 2.5) + (APG × 1.8) + (SPG × 3.0) − (TO × 2.0)</code>
+            </div>
+            <p class="text-gray-700 mb-2">Multiplier based on Global Rating:</p>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 mb-6">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating Range</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Multiplier</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        <tr>
+                            <td class="px-6 py-4 font-medium">90+</td>
+                            <td class="px-6 py-4">1.3×</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="px-6 py-4 font-medium">80–89</td>
+                            <td class="px-6 py-4">1.2×</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">70–79</td>
+                            <td class="px-6 py-4">1.1×</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="px-6 py-4 font-medium">&lt;70</td>
+                            <td class="px-6 py-4">1.0×</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <p class="font-medium text-blue-700">Final Salary = Raw Salary × Multiplier</p>
+                <p class="text-blue-600 text-sm mt-1">Displayed on the Player Value Tracker in <code class="bg-blue-100 px-1.5 py-0.5 rounded">$XX.XX</code> format.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-6 mt-12">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-lg font-semibold">NBA 2K Pro Am Global Rankings</h3>
+                    <p class="text-gray-400 text-sm">The definitive ranking system for 2K basketball esports</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-300 hover:text-white">Terms</a>
+                    <a href="#" class="text-gray-300 hover:text-white">Privacy</a>
+                    <a href="#" class="text-gray-300 hover:text-white">Contact</a>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-700 text-center md:text-left">
+                <p class="text-gray-400 text-sm"> 2025 NBA 2K Pro Am Global Rankings. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!mobileMenu.contains(e.target) && e.target !== mobileMenuButton) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Highlight active page in navigation
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.getAttribute('data-active') === 'player-rating') {
+                    link.classList.add('text-blue-200', 'font-semibold');
+                    link.classList.remove('hover:underline');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events - NBA 2K Pro Am Global Rankings</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/js/config.js" type="module"></script>
+    <style>
+        .event-card {
+            transition: all 0.3s ease;
+        }
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-blue-600 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="text-2xl font-bold">2K26 Global Ranking</a>
+                <nav class="hidden md:block">
+                    <ul class="flex space-x-6">
+                        <li><a href="index.html" class="hover:underline">Leaderboard</a></li>
+                        <li><a href="ranking-info.html" class="hover:underline">Ranking Info</a></li>
+                        <li><a href="player-rating-info.html" class="hover:underline">Player Rating Info</a></li>
+                        <li><a href="players.html" class="hover:underline">Players List</a></li>
+                        <li><a href="teams.html" class="hover:underline">Teams List</a></li>
+                        <li><a href="events.html" class="font-semibold border-b-2 border-white pb-1">Events List</a></li>
+                        <li><a href="submit-results.html" class="bg-white text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50">Submit Results</a></li>
+                    </ul>
+                </nav>
+                <button id="mobile-menu-button" class="md:hidden">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white shadow-lg">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+            <a href="index.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100">Leaderboard</a>
+            <a href="ranking-info.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100">Ranking Info</a>
+            <a href="player-rating-info.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100">Player Rating Info</a>
+            <a href="players.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100">Players List</a>
+            <a href="teams.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100">Teams List</a>
+            <a href="events.html" class="block px-3 py-2 bg-gray-100 text-blue-600 font-medium">Events List</a>
+            <a href="submit-results.html" class="block px-3 py-2 text-blue-600 font-medium hover:bg-blue-50">Submit Results</a>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Events</h1>
+            <p class="text-gray-600">Browse all upcoming and past events with detailed results and statistics.</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 mb-8">
+            <nav class="-mb-px flex space-x-8">
+                <button id="upcoming-tab" class="whitespace-nowrap py-4 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">
+                    <i class="far fa-calendar-alt mr-2"></i>Upcoming Events
+                </button>
+                <button id="past-tab" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="far fa-calendar-check mr-2"></i>Past Events
+                </button>
+                <button id="all-tab" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="fas fa-list-ul mr-2"></i>All Events
+                </button>
+            </nav>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label for="event-type" class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                    <select id="event-type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All Types</option>
+                        <option value="tournament">Tournament</option>
+                        <option value="league">League</option>
+                        <option value="showmatch">Showmatch</option>
+                        <option value="qualifier">Qualifier</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="event-tier" class="block text-sm font-medium text-gray-700 mb-1">Tier</label>
+                    <select id="event-tier" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All Tiers</option>
+                        <option value="T1">Tier 1</option>
+                        <option value="T2">Tier 2</option>
+                        <option value="T3">Tier 3</option>
+                        <option value="T4">Tier 4</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="event-region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                    <select id="event-region" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All Regions</option>
+                        <!-- Will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="reset-filters" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                        Reset Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Grid -->
+        <div id="events-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Loading state -->
+            <div class="col-span-3 py-12 text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+                <p class="mt-2 text-gray-600">Loading events...</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="mt-8 flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span id="start-item" class="font-medium">1</span> to <span id="end-item" class="font-medium">6</span> of <span id="total-items" class="font-medium">0</span> results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button id="prev-page" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-5"></i>
+                        </button>
+                        <div id="page-numbers" class="flex">
+                            <!-- Page numbers will be inserted here -->
+                        </div>
+                        <button id="next-page" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-5"></i>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Event Details Modal -->
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <!-- Modal content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white p-6 mt-12">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold mb-2">2K26 Global Ranking</h3>
+                    <p class="text-gray-400">Tracking competitive team performance across all leagues</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="index.html" class="text-white font-medium">Leaderboard</a>
+                    <a href="ranking-info.html" class="text-gray-300 hover:text-white">Ranking Info</a>
+                    <a href="teams.html" class="text-gray-300 hover:text-white">Teams</a>
+                    <a href="#" class="text-gray-300 hover:text-white">FAQ</a>
+                    <a href="#" class="text-gray-300 hover:text-white">Terms</a>
+                </div>
+            </div>
+            <div class="mt-6 pt-6 border-t border-gray-700 text-center md:text-left">
+                <p class="text-gray-400 text-sm"> 2025 NBA 2K Pro Am Global Rankings. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/events.js" type="module"></script>
+</body>
+</html>
