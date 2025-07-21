@@ -193,144 +193,171 @@ export default function PlayersPageClient({ players, showFallbackMessage = false
 
   return (
     <div className="container mx-auto p-4">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Players</h1>
-        <div className="w-full md:w-1/3">
-          <div className="relative">
-            <input 
-              type="text" 
-              placeholder="Search players..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+      {/* Table Container with UPA Styling */}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        {/* Header Section */}
+        <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Players</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {filteredAndSortedPlayers.length} {filteredAndSortedPlayers.length === 1 ? 'player' : 'players'} found
+              </p>
+            </div>
+            <div className="w-full sm:w-64">
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Search players..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Filters Row */}
+          <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-200">
+            <div className="w-full sm:w-auto">
+              <label htmlFor="position-filter" className="block text-xs font-medium text-gray-700 mb-1">Position</label>
+              <select 
+                id="position-filter" 
+                value={positionFilter}
+                onChange={(e) => setPositionFilter(e.target.value)}
+                className="w-full sm:w-32 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Positions</option>
+                <option value="Point Guard">PG</option>
+                <option value="Shooting Guard">SG</option>
+                <option value="Lock">LK</option>
+                <option value="Power Forward">PF</option>
+                <option value="Center">C</option>
+              </select>
+            </div>
+            <div className="w-full sm:w-auto">
+              <label htmlFor="team-filter" className="block text-xs font-medium text-gray-700 mb-1">Team</label>
+              <select 
+                id="team-filter" 
+                value={teamFilter}
+                onChange={(e) => setTeamFilter(e.target.value)}
+                className="w-full sm:w-48 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Teams</option>
+                {uniqueTeams.map(team => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-full sm:w-auto">
+              <label htmlFor="sort-by" className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
+              <select 
+                id="sort-by" 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full sm:w-48 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="rating-desc">Rating (High to Low)</option>
+                <option value="rating-asc">Rating (Low to High)</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="team-asc">Team (A-Z)</option>
+                <option value="team-desc">Team (Z-A)</option>
+              </select>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex flex-wrap gap-4">
-          <div className="w-full md:w-auto">
-            <label htmlFor="position-filter" className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-            <select 
-              id="position-filter" 
-              value={positionFilter}
-              onChange={(e) => setPositionFilter(e.target.value)}
-              className="w-full md:w-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Positions</option>
-              <option value="Point Guard">PG</option>
-              <option value="Shooting Guard">SG</option>
-              <option value="Lock">LK</option>
-              <option value="Power Forward">PF</option>
-              <option value="Center">C</option>
-            </select>
+        
+        {/* Loading State */}
+        {players.length === 0 && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-          <div className="w-full md:w-auto">
-            <label htmlFor="team-filter" className="block text-sm font-medium text-gray-700 mb-1">Team</label>
-            <select 
-              id="team-filter" 
-              value={teamFilter}
-              onChange={(e) => setTeamFilter(e.target.value)}
-              className="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Teams</option>
-              {uniqueTeams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="w-full md:w-auto">
-            <label htmlFor="sort-by" className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-            <select 
-              id="sort-by" 
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="rating-desc">Rating (High to Low)</option>
-              <option value="rating-asc">Rating (Low to High)</option>
-              <option value="name-asc">Name (A-Z)</option>
-              <option value="name-desc">Name (Z-A)</option>
-              <option value="team-asc">Team (A-Z)</option>
-              <option value="team-desc">Team (Z-A)</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        )}
 
-      {/* Loading State */}
-      {players.length === 0 && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      )}
-
-      {/* Players Table */}
-      {filteredAndSortedPlayers.length > 0 ? (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        {/* Table with Custom Scrollbar */}
+        <div className="w-full overflow-x-auto" style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(0,0,0,0.2) transparent'
+        }}>
+          <style jsx>{`
+            .custom-scrollbar::-webkit-scrollbar {
+              height: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background-color: rgba(0,0,0,0.2);
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background-color: transparent;
+            }
+          `}</style>
+          
+          {filteredAndSortedPlayers.length > 0 ? (
+            <table className="min-w-full custom-scrollbar" style={{ minWidth: '650px' }}>
+              <thead className="bg-gray-100">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200">
                     Player
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200">
                     Team
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200">
                     Position
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200">
                     Rating
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200">
                     Games
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedPlayers.map((player) => (
-                  <tr key={player.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+              <tbody className="bg-white">
+                {paginatedPlayers.map((player, index) => (
+                  <tr 
+                    key={player.id} 
+                    className={`
+                      transition-colors duration-150 hover:bg-blue-50 hover:text-blue-900 border-b border-gray-200 last:border-b-0
+                      ${index % 2 === 1 ? 'bg-gray-50' : 'bg-white'}
+                    `}
+                  >
+                    <td className="px-4 sm:px-6 py-3 sm:py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
+                        <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
                           {player.avatar_url ? (
-                            <img className="h-10 w-10 rounded-full" src={player.avatar_url} alt="" />
+                            <img className="h-8 w-8 sm:h-10 sm:w-10 rounded-full" src={player.avatar_url} alt="" />
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                              <svg className="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                              </svg>
+                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium text-sm">
+                              {player.gamertag.charAt(0).toUpperCase()}
                             </div>
                           )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            <Link href={`/players/${player.id}`} className="hover:text-blue-600">
+                        <div className="ml-3 sm:ml-4">
+                          <div className="text-sm font-medium text-gray-900 hover:text-blue-600">
+                            <Link href={`/players/${player.id}`} className="hover:underline">
                               {player.gamertag}
                             </Link>
                           </div>
                           {player.height && player.weight && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-xs text-gray-500 leading-tight">
                               {player.height} • {player.weight} lbs
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3 sm:py-5 whitespace-nowrap">
                       {player.teams && player.teams.length > 0 ? (
                         <div className="flex items-center">
                           {player.teams[0].logo_url && (
@@ -342,21 +369,21 @@ export default function PlayersPageClient({ players, showFallbackMessage = false
                         <span className="text-sm text-gray-500">Free Agent</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3 sm:py-5 whitespace-nowrap">
                       {player.position && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-500 text-white border border-blue-600 shadow-sm">
                           {getPositionAbbr(player.position)}
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 sm:px-6 py-3 sm:py-5 whitespace-nowrap text-sm text-gray-900">
                       {player.performance_score?.toFixed(0) || '0'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 sm:px-6 py-3 sm:py-5 whitespace-nowrap text-sm text-gray-900">
                       {player.stats?.games_played || '0'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link href={`/players/${player.id}`} className="text-blue-600 hover:text-blue-900">
+                    <td className="px-4 sm:px-6 py-3 sm:py-5 whitespace-nowrap text-sm font-medium">
+                      <Link href={`/players/${player.id}`} className="text-blue-600 hover:text-blue-900 hover:underline">
                         View Details
                       </Link>
                     </td>
@@ -364,61 +391,63 @@ export default function PlayersPageClient({ players, showFallbackMessage = false
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      ) : searchTerm || positionFilter || teamFilter ? (
-        /* Empty State */
-        <div className="text-center py-12">
-          <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          <h3 className="mt-2 text-lg font-medium text-gray-900">No players found</h3>
-          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
-        </div>
-      ) : null}
-
-      {/* Pagination */}
-      {filteredAndSortedPlayers.length > playersPerPage && (
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Showing <span>{startIndex + 1}</span> to <span>{Math.min(startIndex + playersPerPage, filteredAndSortedPlayers.length)}</span> of <span>{filteredAndSortedPlayers.length}</span> players
-          </div>
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <div className="flex space-x-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === pageNum 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'text-gray-700 bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+          ) : searchTerm || positionFilter || teamFilter ? (
+            /* Empty State */
+            <div className="text-center py-12">
+              <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <h3 className="mt-2 text-lg font-medium text-gray-900">No players found</h3>
+              <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
             </div>
-            <button 
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
+          ) : null}
         </div>
-      )}
+        
+        {/* Pagination */}
+        {filteredAndSortedPlayers.length > playersPerPage && (
+          <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 sm:px-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + playersPerPage, filteredAndSortedPlayers.length)}</span> of <span className="font-medium">{filteredAndSortedPlayers.length}</span> players
+              </div>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 border rounded transition-colors ${
+                          currentPage === pageNum 
+                            ? 'bg-blue-500 text-white border-blue-500 shadow-sm' 
+                            : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button 
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

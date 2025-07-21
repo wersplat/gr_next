@@ -143,18 +143,31 @@ export default function TeamsPageClient({ teams: initialTeams }: { teams: TeamWi
               }
             }}
           >
-            <Image
-              src="/UPA-Summer-Championships.png"
-              alt="UPA Summer Championships"
-              width={300}
-              height={120}
-              style={{
-                width: 'auto',
-                height: '100%',
-                maxWidth: '100%',
+            <Typography 
+              variant="h3" 
+              component="div" 
+              sx={{ 
+                fontWeight: 'bold',
+                color: 'white',
+                textAlign: 'center',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                letterSpacing: '0.5px'
               }}
-              priority
-            />
+            >
+              Global 2K Pro Am
+            </Typography>
+            <Typography 
+              variant="h5" 
+              component="div" 
+              sx={{ 
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.9)',
+                textAlign: 'center',
+                mt: 1
+              }}
+            >
+              Ranking System
+            </Typography>
           </Box>
           <Typography 
             variant="h2" 
@@ -165,10 +178,10 @@ export default function TeamsPageClient({ teams: initialTeams }: { teams: TeamWi
               textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
             }}
           >
-            Summer Championship Teams
+            Pro Am Teams
           </Typography>
           <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
-            {initialTeams.length} teams competing in the UPA Summer Championships
+            {initialTeams.length} teams in the Global 2K Pro Am Ranking System
           </Typography>
           
           {/* Quick Stats */}

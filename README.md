@@ -1,6 +1,6 @@
-# UPA Summer Championships
+# Global 2K Pro Am Rankings
 
-A modern web application for tracking teams, players, and matches in the UPA Summer Championships, an NBA 2K Pro Am tournament. Built with Next.js 14, TypeScript, Material-UI, and Supabase.
+A modern web application for tracking teams, players, and matches in the Global 2K Pro Am Rankings, an NBA 2K Pro Am tournament. Built with Next.js 14, TypeScript, Material-UI, and Supabase.
 
 ## 🚀 Features
 

@@ -10,10 +10,10 @@ export default function LoadingSpinner() {
       <Box textAlign="center">
         <CircularProgress color="inherit" sx={{ mb: 2 }} />
         <Box position="relative" width={48} height={48} mx="auto" mb={1}>
-          <Image src="/logo.png" alt="UPA Logo" fill style={{ objectFit: 'contain' }} priority />
+          <Image src="/global-2k-logo.png" alt="2K Logo" fill style={{ objectFit: 'contain' }} priority />
         </Box>
         <Typography variant="h6" component="p">
-          Loading team data...
+          Loading Global 2K Pro Am data...
         </Typography>
         <Typography variant="body2" sx={{ opacity: 0.7 }}>
           This may take a moment

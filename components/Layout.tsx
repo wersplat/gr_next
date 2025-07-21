@@ -28,7 +28,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const menuItems = [
-    { text: 'Bracket', href: '/bracket' },
     { text: 'Teams', href: '/teams' },
     { text: 'Players', href: '/players' },
     { text: 'Awards', href: '/awards' },
@@ -68,7 +67,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               }}
             />
             <Typography variant="h6" sx={{ fontWeight: 700, display: { xs: 'none', md: 'block' }, '&:hover': { opacity: 0.9 } }}>
-              UPA Summer Championships
+              Global 2K Pro Am Rankings
             </Typography>
           </Box>
           
@@ -132,7 +131,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               }}
             />
             <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'center' }}>
-              UPA Summer Championships
+              Global 2K Pro Am Rankings
             </Typography>
           </Link>
           <Divider />
@@ -173,7 +172,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <Box component="footer" sx={{ mt: 4, py: 3, backgroundColor: '#001F3F', color: 'white' }}>
         <Container>
           <Typography variant="body2" align="center" sx={{ opacity: 0.8 }}>
-            &copy; {new Date().getFullYear()} UPA Summer Championships. All rights reserved.
+            &copy; {new Date().getFullYear()} Global 2K Pro Am Rankings. All rights reserved.
           </Typography>
         </Container>
       </Box>

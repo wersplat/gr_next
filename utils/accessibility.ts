@@ -1,5 +1,5 @@
 /**
- * Accessibility utilities for UPA Summer Championships
+ * Accessibility utilities for Global 2K Pro Am Rankings
  * Use these utilities to ensure consistent accessibility practices across the application
  */
 

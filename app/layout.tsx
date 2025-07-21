@@ -23,8 +23,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'UPA Summer Championships',
-  description: 'Track your favorite teams and players in the UPA Summer Championships',
+  title: 'Global 2K Pro Am Rankings',
+  description: 'Track your favorite teams and players in the Global 2K Pro Am Ranking System',
   manifest: '/site.webmanifest',
   icons: {
     icon: [
