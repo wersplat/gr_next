@@ -3,30 +3,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  Box,
-  TextField,
-  InputAdornment,
-  Avatar,
-  TableSortLabel,
-  Chip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TablePagination,
-  Button
-} from '@mui/material';
-import { Search, SportsBasketball } from '@mui/icons-material';
-// Define basic player stats type since we can't import it
+
+// Define basic player stats type
 interface PlayerStats {
   games_played: number;
   points_per_game: number;
@@ -41,39 +19,7 @@ interface PlayerStats {
   turnovers_per_game: number;
   fouls_per_game: number;
   plus_minus: number;
-  [key: string]: number; // Allow dynamic access
-}
-
-// Define all possible value types in Player
-type PlayerValue = 
-  | string 
-  | number 
-  | boolean 
-  | TeamInfo[] 
-  | PlayerStats 
-  | undefined 
-  | null;
-
-interface Player {
-  // Required properties
-  id: string;
-  gamertag: string;
-  performance_score: number;
-  player_rp: number;
-  player_rank_score: number;
-  monthly_value: number;
-  created_at: string;
-  
-  // Optional properties with specific types
-  teams?: TeamInfo[];
-  stats?: PlayerStats;
-  position?: string;
-  height?: string;
-  weight?: string;
-  age?: number;
-  
-  // Index signature for dynamic access with all possible value types
-  [key: string]: PlayerValue;
+  [key: string]: number;
 }
 
 // Define the team interface
@@ -83,531 +29,396 @@ type TeamInfo = {
   logo_url: string | null;
 };
 
-// Define the player with team and stats interface
-type PlayerWithTeam = Player & {
-  avatar_url?: string | null;
+// Define the player interface
+interface Player {
+  id: string;
+  gamertag: string;
+  performance_score: number;
+  player_rp: number;
+  player_rank_score: number;
+  monthly_value: number;
+  created_at: string;
   teams?: TeamInfo[];
   stats?: PlayerStats;
-};
+  position?: string;
+  height?: string;
+  weight?: string;
+  age?: number;
+  avatar_url?: string | null;
+  [key: string]: any;
+}
 
-// Fix for the getPositionColor function type issue
-type PositionColorType = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'default';
+type PlayerWithTeam = Player;
 
 type PlayersPageClientProps = {
   players: PlayerWithTeam[];
   showFallbackMessage?: boolean;
 };
 
-type SortField = keyof PlayerWithTeam | 'team' | 'ppg' | 'rpg' | 'apg' | 'spg' | 'bpg' | 'fg_pct' | 'ft_pct' | '3p_pct' | 'tpg' | 'fpg' | 'mpg' | 'plus_minus' | 'performance_score';
+type SortField = 'gamertag' | 'performance_score' | 'position' | 'games_played' | 'team';
+type SortDirection = 'asc' | 'desc';
 
-// This is a client component that renders the players page
-// It receives the players data from the server component
-const PlayersPageClient = ({ players, showFallbackMessage = false }: PlayersPageClientProps) => {
+interface SortConfig {
+  field: SortField;
+  direction: SortDirection;
+}
+
+export default function PlayersPageClient({ players, showFallbackMessage = false }: PlayersPageClientProps) {
   const router = useRouter();
-  
-  const handleShowAllPlayers = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/players';
-    }
-  }, []);
-  
-  // Prefetch player data on hover
-  const handlePlayerHover = useCallback((playerId: string) => {
-    router.prefetch(`/players/${playerId}`);
-  }, [router]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<SortField>('rank');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [positionFilter, setPositionFilter] = useState<string>('all');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'performance_score', direction: 'desc' });
+  const [positionFilter, setPositionFilter] = useState('');
+  const [teamFilter, setTeamFilter] = useState('');
+  const [sortBy, setSortBy] = useState('rating-desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const playersPerPage = 10;
 
-  const positions = ['Point Guard', 'Shooting Guard', 'Lock', 'Power Forward', 'Center'];
+  // Get unique positions for filter
+  const uniquePositions = useMemo(() => {
+    const positions = players
+      .map(player => player.position)
+      .filter((position): position is string => Boolean(position))
+      .filter((position, index, array) => array.indexOf(position) === index)
+      .sort();
+    return positions;
+  }, [players]);
 
-  const filteredPlayers = useMemo(() => {
-    return players.filter(player => {
-      const matchesSearch = player.gamertag.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.teams?.some(team => team.name.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesPosition = positionFilter === 'all' || 
-        (player.position && player.position === positionFilter);
-      
-      return matchesSearch && matchesPosition;
-    });
-  }, [players, searchTerm, positionFilter]);
+  // Get unique teams for filter
+  const uniqueTeams = useMemo(() => {
+    const teams = players
+      .flatMap(player => player.teams || [])
+      .filter((team, index, array) => array.findIndex(t => t.id === team.id) === index)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return teams;
+  }, [players]);
 
-  const sortedPlayers = useMemo(() => {
-    return [...filteredPlayers].sort((a, b) => {
-      let comparison = 0;
+  // Handle sort
+  const handleSort = useCallback((field: SortField) => {
+    setSortConfig(prevConfig => ({
+      field,
+      direction: prevConfig.field === field && prevConfig.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  }, []);
+
+  // Filter and sort players
+  const filteredAndSortedPlayers = useMemo(() => {
+    let filtered = players;
+
+    // Apply search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(player => 
+        player.gamertag?.toLowerCase().includes(searchLower) ||
+        player.teams?.some(team => team.name.toLowerCase().includes(searchLower)) ||
+        player.position?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply position filter
+    if (positionFilter) {
+      filtered = filtered.filter(player => player.position === positionFilter);
+    }
+
+    // Apply team filter
+    if (teamFilter) {
+      filtered = filtered.filter(player => 
+        player.teams?.some(team => team.id === teamFilter)
+      );
+    }
+
+    // Apply sort based on sortBy value
+    const [sortField, sortDirection] = sortBy.split('-') as [string, 'asc' | 'desc'];
+    
+    filtered = [...filtered].sort((a, b) => {
+      let aVal: any, bVal: any;
       
       switch (sortField) {
-        case 'rank':
-          comparison = (a.player_rank_score || 0) - (b.player_rank_score || 0);
+        case 'rating':
+          aVal = a.performance_score || 0;
+          bVal = b.performance_score || 0;
           break;
         case 'name':
-          comparison = a.gamertag.localeCompare(b.gamertag);
-          break;
+          aVal = a.gamertag?.toLowerCase() || '';
+          bVal = b.gamertag?.toLowerCase() || '';
+          return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         case 'team':
-          const getTeamName = (team?: TeamInfo) => team?.name || '';
-          const teamA = getTeamName(a.teams?.[0]);
-          const teamB = getTeamName(b.teams?.[0]);
-          comparison = teamA.localeCompare(teamB);
-          break;
-        case 'position':
-          comparison = (a.position || '').localeCompare(b.position || '');
-          break;
-        case 'ppg':
-          comparison = (a.stats?.points_per_game || 0) - (b.stats?.points_per_game || 0);
-          break;
-        case 'rpg':
-          comparison = (a.stats?.rebounds_per_game || 0) - (b.stats?.rebounds_per_game || 0);
-          break;
-        case 'apg':
-          comparison = (a.stats?.assists_per_game || 0) - (b.stats?.assists_per_game || 0);
-          break;
-        case 'spg':
-          comparison = (a.stats?.steals_per_game || 0) - (b.stats?.steals_per_game || 0);
-          break;
-        case 'bpg':
-          comparison = (a.stats?.blocks_per_game || 0) - (b.stats?.blocks_per_game || 0);
-          break;
-        case 'fg_pct':
-          comparison = (a.stats?.field_goal_percentage || 0) - (b.stats?.field_goal_percentage || 0);
-          break;
-        case 'ft_pct':
-          comparison = (a.stats?.free_throw_percentage || 0) - (b.stats?.free_throw_percentage || 0);
-          break;
-        case '3p_pct':
-          comparison = (a.stats?.three_point_percentage || 0) - (b.stats?.three_point_percentage || 0);
-          break;
-        case 'tpg':
-          comparison = (a.stats?.turnovers_per_game || 0) - (b.stats?.turnovers_per_game || 0);
-          break;
-        case 'fpg':
-          comparison = (a.stats?.fouls_per_game || 0) - (b.stats?.fouls_per_game || 0);
-          break;
-        case 'mpg':
-          comparison = (a.stats?.minutes_per_game || 0) - (b.stats?.minutes_per_game || 0);
-          break;
-        case 'plus_minus':
-          comparison = (a.stats?.plus_minus || 0) - (b.stats?.plus_minus || 0);
-          break;
-        case 'performance_score':
-          comparison = (a.performance_score || 0) - (b.performance_score || 0);
-          break;
+          aVal = a.teams?.[0]?.name?.toLowerCase() || 'zzz';
+          bVal = b.teams?.[0]?.name?.toLowerCase() || 'zzz';
+          return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         default:
-          comparison = 0;
+          aVal = 0;
+          bVal = 0;
       }
       
-      return sortDirection === 'asc' ? comparison : -comparison;
+      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
     });
-  }, [filteredPlayers, sortField, sortDirection]);
 
-  const handleSort = (field: SortField) => {
-    const isAsc = sortField === field && sortDirection === 'asc';
-    setSortDirection(isAsc ? 'desc' : 'asc');
-    setSortField(field);
-  };
+    return filtered;
+  }, [players, searchTerm, positionFilter, teamFilter, sortBy]);
 
-  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
-    setPage(newPage);
-  };
+  // Get paginated players
+  const totalPages = Math.ceil(filteredAndSortedPlayers.length / playersPerPage);
+  const startIndex = (currentPage - 1) * playersPerPage;
+  const paginatedPlayers = filteredAndSortedPlayers.slice(startIndex, startIndex + playersPerPage);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const renderStatCell = (value: number | undefined, isPercentage = false) => {
-    if (value === undefined || value === null) return '-.--';
-    return isPercentage ? `${(value * 100).toFixed(1)}%` : value.toFixed(1);
-  };
-
-  const getPositionColor = (position?: string | null): PositionColorType => {
-    if (!position) return 'default';
-    
-    const positionMap: Record<string, PositionColorType> = {
-      'Point Guard': 'primary',
-      'Shooting Guard': 'secondary',
-      'Lock': 'success',
-      'Power Forward': 'warning',
-      'Center': 'error',
+  // Get position abbreviation
+  const getPositionAbbr = (position: string | undefined) => {
+    if (!position) return '';
+    const positionMap: { [key: string]: string } = {
+      'Point Guard': 'PG',
+      'Shooting Guard': 'SG',
+      'Lock': 'LK',
+      'Power Forward': 'PF',
+      'Center': 'C'
     };
-    
-    return positionMap[position] || 'default';
+    return positionMap[position] || position;
   };
 
   if (showFallbackMessage) {
     return (
-      <Box sx={{ width: '100%', p: 3, textAlign: 'center', mt: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          No players found for the current event
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          There are no players registered for this event yet.
-        </Typography>
-        <Button 
-          variant="contained" 
-          color="primary"
-          onClick={handleShowAllPlayers}
-          startIcon={<SportsBasketball />}
+      <div className="flex flex-col items-center justify-center min-h-96 p-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">Players Database</h1>
+        <p className="text-gray-600 mb-6 text-center max-w-2xl">
+          Welcome to the NBA 2K Pro Am Global Rankings players database. Here you can explore detailed statistics and information about all registered players.
+        </p>
+        <button 
+          onClick={() => router.refresh()}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          View All Players
-        </Button>
-      </Box>
+          Load Players
+        </button>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ 
-      width: '100%', 
-      p: { xs: 1, sm: 2, md: 3 },
-      overflowX: 'hidden'
-    }}>
-      <Box sx={{ mb: { xs: 2, sm: 4 } }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-          Player Rankings
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: { xs: 2, sm: 3 } }}>
-          View and compare player statistics and rankings
-        </Typography>
-        
-        <Box sx={{ 
-          display: 'flex', 
-          gap: { xs: 1, sm: 2 }, 
-          mb: { xs: 2, sm: 3 }, 
-          flexDirection: { xs: 'column', sm: 'row' },
-          '& .MuiFormControl-root': {
-            width: { xs: '100%', sm: 'auto' },
-          }
-        }}>
-          <TextField
-            placeholder="Search players or teams..."
-            variant="outlined"
-            size="small"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ 
-              minWidth: { xs: '100%', sm: 250 },
-              '& .MuiInputBase-root': {
-                height: '40px',
-              }
-            }}
-          />
-          
-          <FormControl size="small" sx={{ minWidth: 120, width: { xs: '100%', sm: 'auto' } }}>
-            <InputLabel>Position</InputLabel>
-            <Select
-              value={positionFilter}
-              label="Position"
-              onChange={(e) => setPositionFilter(e.target.value as string)}
-            >
-              <MenuItem value="all">All Positions</MenuItem>
-              {positions.map((pos) => (
-                <MenuItem key={pos} value={pos}>{pos}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Box>
-      
-      <Paper sx={{ 
-        width: '100%', 
-        mb: 2, 
-        overflow: 'hidden',
-        boxShadow: { xs: 'none', sm: '0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)' }
-      }}>
-        <TableContainer sx={{ 
-          maxHeight: { xs: 'auto', sm: 'calc(100vh - 300px)' },
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          '&::-webkit-scrollbar': {
-            height: '6px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(0,0,0,0.2)',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-        }}>
-          <Table 
-            stickyHeader
-            sx={{
-              minWidth: 900,
-              '& .MuiTableCell-root': {
-                py: { xs: 0.75, sm: 1 },
-                px: { xs: 0.75, sm: 1.5 },
-                '&:first-of-type': {
-                  pl: { xs: 1, sm: 2 },
-                },
-                '&:last-child': {
-                  pr: { xs: 1, sm: 2 },
-                }
-              },
-              '& .MuiTableHead-root .MuiTableCell-root': {
-                whiteSpace: 'nowrap',
-                py: { xs: 1, sm: 1.25 },
-                px: { xs: 0.75, sm: 1.5 },
-                '&:first-of-type': {
-                  pl: { xs: 1, sm: 2 },
-                },
-                '&:last-child': {
-                  pr: { xs: 1, sm: 2 },
-                }
-              },
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === 'rank'}
-                    direction={sortField === 'rank' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('rank')}
-                  >
-                    Rank
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === 'name'}
-                    direction={sortField === 'name' ? sortDirection : 'asc'}
-                    onClick={() => handleSort('name')}
-                  >
-                    Player
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="center">
-                  <TableSortLabel
-                    active={sortField === 'team'}
-                    direction={sortField === 'team' ? sortDirection : 'asc'}
-                    onClick={() => handleSort('team')}
-                  >
-                    Team
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="center">
-                  <TableSortLabel
-                    active={sortField === 'position'}
-                    direction={sortField === 'position' ? sortDirection : 'asc'}
-                    onClick={() => handleSort('position')}
-                  >
-                    Position
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'ppg'}
-                    direction={sortField === 'ppg' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('ppg')}
-                  >
-                    PPG
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'rpg'}
-                    direction={sortField === 'rpg' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('rpg')}
-                  >
-                    RPG
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'apg'}
-                    direction={sortField === 'apg' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('apg')}
-                  >
-                    APG
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'spg'}
-                    direction={sortField === 'spg' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('spg')}
-                  >
-                    SPG
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'bpg'}
-                    direction={sortField === 'bpg' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('bpg')}
-                  >
-                    BPG
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'fg_pct'}
-                    direction={sortField === 'fg_pct' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('fg_pct')}
-                  >
-                    FG%
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'ft_pct'}
-                    direction={sortField === 'ft_pct' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('ft_pct')}
-                  >
-                    FT%
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === '3p_pct'}
-                    direction={sortField === '3p_pct' ? sortDirection : 'desc'}
-                    onClick={() => handleSort('3p_pct')}
-                  >
-                    3P%
-                  </TableSortLabel>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedPlayers
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((player, index) => (
-                  <TableRow hover key={player.id}>
-                    <TableCell>#{index + 1 + page * rowsPerPage}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar 
-                          src={player.avatar_url || undefined} 
-                          alt={player.gamertag}
-                          sx={{ 
-                            width: { xs: 28, sm: 32 }, 
-                            height: { xs: 28, sm: 32 },
-                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                          }}
-                        >
-                          <SportsBasketball />
-                        </Avatar>
-                        <Link 
-                          href={`/players/${player.id}`} 
-                          style={{ textDecoration: 'none', color: 'inherit' }}
-                          onMouseEnter={() => handlePlayerHover(player.id)}
-                        >
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              fontWeight: 500, 
-                              fontSize: { xs: '0.875rem', sm: '0.9375rem' },
-                              '&:hover': { textDecoration: 'underline' } 
-                            }}
-                          >
-                            {player.gamertag}
-                          </Typography>
-                        </Link>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      {player.teams?.[0]?.logo_url ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                          <Avatar 
-                            src={player.teams[0].logo_url} 
-                            alt={player.teams[0].name}
-                            title={player.teams[0].name}
-                            sx={{ 
-                              width: { xs: 24, sm: 28 }, 
-                              height: { xs: 24, sm: 28 },
-                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                              bgcolor: 'background.paper',
-                              '& img': {
-                                objectFit: 'contain',
-                                p: 0.5
-                              }
-                            }}
-                          />
-                        </Box>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell align="center">
-                      {player.position ? (
-                        <Chip 
-                          label={player.position} 
-                          size="small" 
-                          color={getPositionColor(player.position) as any}
-                          sx={{ 
-                            minWidth: 40,
-                            '& .MuiChip-label': {
-                              px: 1,
-                              fontSize: '0.75rem',
-                              fontWeight: 500
-                            }
-                          }}
-                        />
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.points_per_game)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.rebounds_per_game)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.assists_per_game)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.steals_per_game)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.blocks_per_game)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.field_goal_percentage, true)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.three_point_percentage, true)}</TableCell>
-                    <TableCell align="right">{renderStatCell(player.stats?.free_throw_percentage, true)}</TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={sortedPlayers.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{
-            '& .MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              gap: 1,
-              '& .MuiTablePagination-spacer': {
-                flex: '0 0 0',
-              },
-              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-                m: 0,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              },
-              '& .MuiTablePagination-actions': {
-                ml: 1,
-              },
-              '& .MuiButtonBase-root': {
-                p: { xs: 0.5, sm: 1 },
-              },
-              '& .MuiSelect-select': {
-                p: { xs: '6px 24px 6px 8px', sm: '8px 32px 8px 12px' },
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              },
-            },
-          }}
-        />
-      </Paper>
-      
-      <Box sx={{ mt: 2, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          Showing {Math.min(page * rowsPerPage + 1, sortedPlayers.length)}-{Math.min((page + 1) * rowsPerPage, sortedPlayers.length)} of {sortedPlayers.length} players
-        </Typography>
-      </Box>
-    </Box>
-  );
-};
+    <div className="container mx-auto p-4">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Players</h1>
+        <div className="w-full md:w-1/3">
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Search players..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
 
-export default PlayersPageClient;
+      {/* Filters */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex flex-wrap gap-4">
+          <div className="w-full md:w-auto">
+            <label htmlFor="position-filter" className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+            <select 
+              id="position-filter" 
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+              className="w-full md:w-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Positions</option>
+              <option value="Point Guard">PG</option>
+              <option value="Shooting Guard">SG</option>
+              <option value="Lock">LK</option>
+              <option value="Power Forward">PF</option>
+              <option value="Center">C</option>
+            </select>
+          </div>
+          <div className="w-full md:w-auto">
+            <label htmlFor="team-filter" className="block text-sm font-medium text-gray-700 mb-1">Team</label>
+            <select 
+              id="team-filter" 
+              value={teamFilter}
+              onChange={(e) => setTeamFilter(e.target.value)}
+              className="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Teams</option>
+              {uniqueTeams.map(team => (
+                <option key={team.id} value={team.id}>{team.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full md:w-auto">
+            <label htmlFor="sort-by" className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <select 
+              id="sort-by" 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="rating-desc">Rating (High to Low)</option>
+              <option value="rating-asc">Rating (Low to High)</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="team-asc">Team (A-Z)</option>
+              <option value="team-desc">Team (Z-A)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {players.length === 0 && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
+      {/* Players Table */}
+      {filteredAndSortedPlayers.length > 0 ? (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Player
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Team
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Position
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rating
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Games
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedPlayers.map((player) => (
+                  <tr key={player.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          {player.avatar_url ? (
+                            <img className="h-10 w-10 rounded-full" src={player.avatar_url} alt="" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                              <svg className="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            <Link href={`/players/${player.id}`} className="hover:text-blue-600">
+                              {player.gamertag}
+                            </Link>
+                          </div>
+                          {player.height && player.weight && (
+                            <div className="text-sm text-gray-500">
+                              {player.height} • {player.weight} lbs
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {player.teams && player.teams.length > 0 ? (
+                        <div className="flex items-center">
+                          {player.teams[0].logo_url && (
+                            <img className="h-6 w-6 rounded-full mr-2" src={player.teams[0].logo_url} alt="" />
+                          )}
+                          <span className="text-sm text-gray-900">{player.teams[0].name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">Free Agent</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {player.position && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {getPositionAbbr(player.position)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {player.performance_score?.toFixed(0) || '0'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {player.stats?.games_played || '0'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <Link href={`/players/${player.id}`} className="text-blue-600 hover:text-blue-900">
+                        View Details
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : searchTerm || positionFilter || teamFilter ? (
+        /* Empty State */
+        <div className="text-center py-12">
+          <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <h3 className="mt-2 text-lg font-medium text-gray-900">No players found</h3>
+          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
+        </div>
+      ) : null}
+
+      {/* Pagination */}
+      {filteredAndSortedPlayers.length > playersPerPage && (
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Showing <span>{startIndex + 1}</span> to <span>{Math.min(startIndex + playersPerPage, filteredAndSortedPlayers.length)}</span> of <span>{filteredAndSortedPlayers.length}</span> players
+          </div>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <div className="flex space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 border rounded ${
+                      currentPage === pageNum 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'text-gray-700 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button 
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
